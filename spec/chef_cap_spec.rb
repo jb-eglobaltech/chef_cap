@@ -637,7 +637,7 @@ describe "chef_cap" do
                "servers": [
                 {
                   "hostname": "dep0host",
-                  "roles": ["dep0"]
+                  "roles": ["dep0", "dep4"]
                 },
                 {
                   "hostname": "dep2host",
@@ -650,7 +650,8 @@ describe "chef_cap" do
             "dep0": { "run_list": [] },
             "dep1": { "run_list": [] },
             "dep2": { "run_list": [] },
-            "dep3": { "run_list": [] }
+            "dep3": { "run_list": [] },
+            "dep4": { "run_list": [] }
           }
         }
           JS

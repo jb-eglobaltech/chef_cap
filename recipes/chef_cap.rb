@@ -35,7 +35,11 @@ if ChefDnaParser.parsed["environments"]
       if environment_hash["role_order"]
         set :role_order, environment_hash["role_order"]
       else
-        set(:role_order, {}) unless defined?(role_order)
+        begin
+          role_order
+        rescue
+          set(:role_order, {})
+        end
       end
 
       default_environment["RAILS_ENV"] = rails_env
