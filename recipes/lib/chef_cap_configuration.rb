@@ -14,6 +14,7 @@ class ChefCapConfiguration
           @configuration.send(:set, :scm, :svn)
           @configuration.send(:depend, :remote, :command, "svn")
       end
+      @configuration.send(:set, :revision, ChefCapHelper.set_revision) if ChefCapHelper.has_revision?
     end
   end
 end
