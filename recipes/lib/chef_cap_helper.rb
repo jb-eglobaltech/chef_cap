@@ -12,12 +12,13 @@ class ChefCapHelper
         end
         next if key == :ssh_options # skip restricted variables
 
-        unless value.nil?
-          debug("Setting #{key.inspect} => #{value.inspect}")
-          ChefCapConfiguration.configuration.set key, value
-        else
+        override_value = ENV[key.to_s]
+        if value.nil? || override_value == "null"
           debug("Unsetting #{key.inspect} => #{value.inspect}")
           ChefCapConfiguration.configuration.unset key
+        else
+          debug("Setting #{key.inspect} => #{value.inspect}")
+          ChefCapConfiguration.configuration.set key, (override_value || value)
         end
       end
     end

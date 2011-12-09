@@ -45,6 +45,25 @@ describe ChefCapHelper do
       end
     end
 
+    context "given an environment variable matching the key name" do
+      before { ENV["gateway"] = "mygateway" }
+      after { ENV["gateway"] = nil }
+
+      it "should overwrite the value with the environment variable" do
+        @configuration.should_receive(:set).with(:gateway, "mygateway")
+        ChefCapHelper.parse_hash({"gateway" => "yourgateway"})
+      end
+    end
+
+    context "given an environment variable matching the key name" do
+      before { ENV["gateway"] = "null" }
+      after { ENV["gateway"] = nil }
+
+      it "should overwrite the value with the environment variable" do
+        @configuration.should_receive(:unset).with(:gateway)
+        ChefCapHelper.parse_hash({"gateway" => "yourgateway"})
+      end
+    end
     it "should unset null values" do
       @configuration.should_receive(:unset).with(:somekey)
       @configuration.should_not_receive(:set)
