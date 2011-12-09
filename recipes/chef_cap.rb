@@ -151,7 +151,7 @@ end
 if ChefDnaParser.parsed["chef"] && ChefDnaParser.parsed["chef"]["version"]
   set :chef_version, ChefDnaParser.parsed["chef"]["version"]
 else
-  default_chef_version = "0.9.16"
+  default_chef_version = "0.10.4"
   set :chef_version, default_chef_version
 end
 
