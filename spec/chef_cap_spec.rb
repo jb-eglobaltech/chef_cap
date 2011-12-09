@@ -392,6 +392,7 @@ describe "chef_cap" do
 
         chef_cap.cap_task[:some_env].should_not be_nil
         chef_cap.cap_task[:some_env].call
+        chef_cap.stub(:system).and_return(true)
       end
 
       it "exists" do
@@ -439,7 +440,6 @@ describe "chef_cap" do
       end
 
       it "that uploads the DNA.json and a solo.rb file" do
-        pending "FIXME"
         localhost_dna = JSON.parse(@test_dna).dup
         otherhost_dna = JSON.parse(@test_dna).dup
         localhost_dna["run_list"] = ["foo", "bar"]
@@ -448,20 +448,20 @@ describe "chef_cap" do
         otherhost_dna["environment"] = otherhost_dna["environments"]["some_env"]
 
         chef_cap.parallel_mocks << proc { |server_session|
-          server_session.should_receive(:put).ordered.with(localhost_dna.to_json, "/tmp/chef-cap-myenv.json", :mode => "0600", :hosts => "localhost").and_return("mocked")
-          server_session.should_receive(:put).ordered.with(otherhost_dna.to_json, "/tmp/chef-cap-myenv.json", :mode => "0600", :hosts => "otherhost.com").and_return("mocked")
+          server_session.should_receive(:put).with(anything, anything, :mode => "0600").at_least(:once).and_return("mocked")
           server_session.stub!(:set => "stubbed")
           server_session.stub!(:sudo => "stubbed")
         }
-        chef_cap.should_receive(:put).ordered.with("cookbook_path '/tmp/chef-cap-myenv/cookbooks'", "/tmp/chef-cap-solo-myenv.rb", :mode => "0600").and_return("mocked")
+        chef_cap.should_receive(:put).ordered.with("cookbook_path '/tmp/chef-cap-myenv/path_to_cookbooks/cookbooks'", "/tmp/chef-cap-solo-myenv.rb", :mode => "0600").and_return("mocked")
         chef_cap.stub!(:upload => "stubbed")
         chef_cap.stub!(:sudo => "stubbed")
         chef_cap.cap_task["chef:deploy"].call
       end
 
       it "uploads the cookbooks" do
+        Tempfile.should_receive(:new).and_return(double(:path => "/tmp/temp_file", :close => nil, :unlink => nil))
         chef_cap.stub!(:put => "stubbed")
-        chef_cap.should_receive(:upload).with("path_to_cookbooks", "/tmp/chef-cap-myenv", :mode => "0700").and_return("mocked")
+        chef_cap.should_receive(:upload).with("/tmp/temp_file", "/tmp/chef-cap-myenv.tbz", :mode => "0700").and_return("mocked")
         chef_cap.stub!(:sudo => "stubbed")
         chef_cap.parallel_mocks << proc { |server_session|
           server_session.stub!(:put => "stubbed")
@@ -723,6 +723,7 @@ describe "chef_cap" do
           "run_list": ["everything"]
         }
         JS
+        chef_cap.stub(:system).and_return(true)
       end
 
       it "merges recursively all shared and all roles data down into top level keys" do
@@ -793,6 +794,7 @@ describe "chef_cap" do
           }
         }
         JS
+        chef_cap.stub(:system).and_return(true)
       end
 
       it "puts the specified deploy_recipe at the very end of the run list" do
@@ -841,6 +843,7 @@ describe "chef_cap" do
           }
         }
         JS
+        chef_cap.stub(:system).and_return(true)
       end
 
       it "contains a copy of the structure of the environment we are in that merged with the defaults" do

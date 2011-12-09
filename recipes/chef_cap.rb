@@ -168,11 +168,17 @@ namespace :chef do
 
   desc "Run chef-solo on the server(s)"
   task :deploy do
-    put "cookbook_path '/tmp/chef-cap-#{rails_env}/cookbooks'", "/tmp/chef-cap-solo-#{rails_env}.rb", :mode => "0600"
+    require "tempfile"
+    put "cookbook_path '/tmp/chef-cap-#{rails_env}/#{File.basename(chef_root_path)}/cookbooks'", "/tmp/chef-cap-solo-#{rails_env}.rb", :mode => "0600"
     sudo "rm -rf /tmp/chef-cap-#{rails_env}"
-    upload chef_root_path, "/tmp/chef-cap-#{rails_env}", :mode => "0700"
-
-
+    file = Tempfile.new("chef-cap-#{rails_env}")
+    file.close
+    compressed_chef = file.path
+    system("cd #{chef_root_path}/../ && tar cjf #{compressed_chef} #{File.basename(chef_root_path)}")
+    upload compressed_chef, "/tmp/chef-cap-#{rails_env}.tbz", :mode => "0700"
+    sudo "mkdir -p /tmp/chef-cap-#{rails_env}"
+    sudo "tar xjf /tmp/chef-cap-#{rails_env}.tbz -C /tmp/chef-cap-#{rails_env}"
+    file.unlink
     begin
       env_settings = environment_settings
     rescue
