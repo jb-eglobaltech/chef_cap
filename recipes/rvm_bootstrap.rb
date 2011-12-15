@@ -8,7 +8,7 @@ namespace :rvm do
   task :bootstrap do
     rvm_standup_script = <<-SH
       #!/bin/bash
-      RVM_URL="https://rvm.beginrescueend.com/install/rvm"
+      RVM_URL="https://raw.github.com/wayneeseguin/rvm/master/binscripts/rvm-installer"
       export PATH=$PATH:/usr/local/rvm/bin:~/.rvm/bin
       HAVE_RVM_ALREADY=`which rvm 2>/dev/null`
       if [ $? -eq 0 ]; then
@@ -24,7 +24,7 @@ namespace :rvm do
       HAVE_CURL=`which curl 2>/dev/null`
       if [ $? -eq 0 ]; then
         RVM_TEMP_FILE=`mktemp /tmp/rvm_bootstrap.XXXXXX`
-        curl $RVM_URL > $RVM_TEMP_FILE
+        curl -k $RVM_URL | sed "s/curl /curl -k /g" > $RVM_TEMP_FILE
         chmod u+rx $RVM_TEMP_FILE
         sh $RVM_TEMP_FILE
         rm -f $RVM_TEMP_FILE
