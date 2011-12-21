@@ -5,6 +5,12 @@ describe ChefCapConfiguration do
     context "the repository specific settings" do
       before do
         ENV["rev"] = "SOME_REV"
+        ENV["branch"] = "SOME_BRANCH"
+      end
+
+      after do
+        ENV["rev"] = nil
+        ENV["branch"] = nil
       end
 
       it "should set repository values for a git repository" do
@@ -15,6 +21,7 @@ describe ChefCapConfiguration do
         configuration.should_receive(:default_run_options).and_return({})
         configuration.should_receive(:depend).with(:remote, :command, "git")
         configuration.should_receive(:set).with(:revision, anything)
+        configuration.should_receive(:set).with(:branch, anything)
         ChefCapConfiguration.configuration = configuration
 
         ChefCapConfiguration.set_repository_settings
@@ -22,26 +29,35 @@ describe ChefCapConfiguration do
 
       it "should set repository values for an svn repository" do
         configuration = mock("Configuration")
-        ChefCapConfiguration.configuration = configuration
         configuration.stub!(:repository => "svn://somesvnrepo")
         configuration.should_receive(:set).with(:scm, :svn)
         configuration.should_receive(:depend).with(:remote, :command, "svn")
         configuration.should_receive(:set).with(:revision, anything)
-
+        configuration.should_receive(:set).with(:branch, anything)
+        ChefCapConfiguration.configuration = configuration
         ChefCapConfiguration.set_repository_settings
       end
     end
 
     it "should set the revision variable so other capistrano tasks will have the right revision value" do
       configuration = mock("Configuration")
-      ChefCapConfiguration.configuration = configuration
       configuration.stub!(:repository => nil)
+      ENV["branch"] = "SOME_BRANCH"
+      configuration.should_receive(:set).with(:branch, anything)
       ENV["rev"] = "SOME_REV"
       configuration.should_receive(:set).with(:revision, "SOME_REV")
-
+      ChefCapConfiguration.configuration = configuration
       ChefCapConfiguration.set_repository_settings
-      ENV["rev"] = nil
     end
 
+    it "should set the branch variable so other capistrano tasks will have the right branch value" do
+      configuration = mock("Configuration")
+      configuration.stub!(:repository => nil)
+      configuration.should_receive(:set).with(:revision, anything)
+      ENV["branch"] = "SOME_BRANCH"
+      configuration.should_receive(:set).with(:branch, "SOME_BRANCH")
+      ChefCapConfiguration.configuration = configuration
+      ChefCapConfiguration.set_repository_settings
+    end
   end
 end
