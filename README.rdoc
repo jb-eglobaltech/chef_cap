@@ -72,6 +72,8 @@ Optional JSON keys:
 
   { "environments": { ENVIRONMENT: { "role_order": { FIRST_ROLE: [OTHER_ROLES] } } } }
   { "environments": { ENVIRONMENT: { "environment_settings": ENV_HASH } } }
+  { "rollback_run_list": [] }
+  { "deploy_recipe": "[some_cookbook]::[some_recipe]" }
 
 
 == REQUIREMENTS

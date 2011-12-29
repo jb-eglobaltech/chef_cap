@@ -98,14 +98,26 @@ def unset(key)
 end
 
 def set(key, value)
-  key.to_s.gsub!(/\.|-/, '_')
+  defined_key = key.to_s.gsub(/\.|-/, '_')
+  accessor_key = "key_#{defined_key}".to_sym
+  @variables ||= {}
+  @variables[accessor_key] = value
   self.instance_eval(<<-EOS)
-    def #{key}
-      #{value.inspect}
+    def #{defined_key.to_s}
+      @variables[#{accessor_key}]
     end
   EOS
+end
+
+def set(key, value)
+  key.to_s.gsub!(/\.|-/, '_')
   @variables ||= {}
-  @variables[key] = value
+  @variables[key.to_sym] = value
+  self.instance_eval(<<-EOS)
+    def #{key.to_s}
+      @variables['#{key}'.to_sym]
+    end
+  EOS
 end
 
 def cap_variable
@@ -127,6 +139,14 @@ end
 
 def current_description
   @task_description
+end
+
+def transaction(&block)
+  yield
+end
+
+def on_rollback(&block)
+  # ignore for now
 end
 
 def namespace(name, &block)

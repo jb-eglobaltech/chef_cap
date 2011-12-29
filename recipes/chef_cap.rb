@@ -25,7 +25,6 @@ if ChefDnaParser.parsed["environments"]
   ChefDnaParser.parsed["environments"].each_key do |environment|
     next if environment == "default"
     environment_hash = ChefDnaParser.parsed["environments"][environment]
-
     set :environments, environments.merge(environment => environment_hash)
 
     desc "Set server roles for the #{environment} environment"
@@ -208,35 +207,56 @@ namespace :chef do
 
         set "node_hash_for_#{channel[:host].gsub(/\./, "_")}", json_to_modify
         put json_to_modify.to_json, "/tmp/chef-cap-#{rails_env}-#{channel[:host]}.json", :mode => "0600"
+
+        rollback_json = json_to_modify.dup
+        rollback_json["run_list"] = rollback_json["rollback_run_list"] || []
+        set "node_hash_for_#{channel[:host].gsub(/\./, "_")}_rollback", rollback_json
+        put rollback_json.to_json, "/tmp/chef-cap-#{rails_env}-#{channel[:host]}-rollback.json", :mode => "0600"
       end
     end
+    transaction { chef.run_chef_solo }
+  end
 
-    chef.run_chef_solo
+  task :setup_to_run_chef_solo do
+    set :debug_flag, ENV['QUIET'] ? '' : '-l debug'
+    exec_chef_solo = "env PATH=$PATH:/usr/sbin `cat #{rvm_bin_path}` default exec chef-solo -c /tmp/chef-cap-solo-#{rails_env}.rb #{debug_flag}"
+    set :run_chef_solo_deploy_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`.json"
+    set :run_chef_solo_rollback_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`-rollback.json"
+    set :run_chef_solo_block, { :block => lambda { |command_to_run|
+      hosts_that_have_run = []
+      unless role_order.empty?
+        role_order.each do |role, dependent_roles|
+          role_hosts = (find_servers(:roles => [role.to_sym]).map(&:host) - hosts_that_have_run).uniq
+          dependent_hosts = (find_servers(:roles => dependent_roles.map(&:to_sym)).map(&:host) - role_hosts - hosts_that_have_run).uniq
+          if role_hosts.any?
+            sudo(command_to_run, :hosts => role_hosts)
+            hosts_that_have_run += role_hosts
+          end
+          if dependent_hosts.any?
+            sudo(command_to_run, :hosts => dependent_hosts)
+            hosts_that_have_run += dependent_hosts
+          end
+        end
+      else
+        sudo(command_to_run)
+      end
+    } } # Because capistrano automatically calls lambdas on reference which means you can't pass it an argument.
+  end
+
+  task :rollback_pre_hook do
+  end
+
+  task :rollback_post_hook do
   end
 
   task :run_chef_solo do
-    debug_flag = ENV['QUIET'] ? '' : '-l debug'
-    run_chef_solo = "env PATH=$PATH:/usr/sbin `cat #{rvm_bin_path}` default exec chef-solo -c /tmp/chef-cap-solo-#{rails_env}.rb -j /tmp/chef-cap-#{rails_env}-`hostname`.json #{debug_flag}"
-
-    hosts_that_have_run = []
-    unless role_order.empty?
-      role_order.each do |role, dependent_roles|
-        role_hosts = (find_servers(:roles => [role.to_sym]).map(&:host) - hosts_that_have_run).uniq
-        dependent_hosts = (find_servers(:roles => dependent_roles.map(&:to_sym)).map(&:host) - role_hosts - hosts_that_have_run).uniq
-
-        if role_hosts.any?
-          sudo(run_chef_solo, :hosts => role_hosts)
-          hosts_that_have_run += role_hosts
-        end
-        if dependent_hosts.any?
-          sudo(run_chef_solo, :hosts => dependent_hosts)
-          hosts_that_have_run += dependent_hosts
-        end
-      end
-    else
-      sudo(run_chef_solo)
+    chef.setup_to_run_chef_solo
+    on_rollback do
+      chef.rollback_pre_hook
+      run_chef_solo_block[:block].call(run_chef_solo_rollback_command)
+      chef.rollback_post_hook
     end
-
+    run_chef_solo_block[:block].call(run_chef_solo_deploy_command)
   end
 
   desc "Remove all chef-cap files from /tmp"

@@ -418,23 +418,11 @@ describe "chef_cap" do
 
         chef_cap.parallel_sessions.each do |server_session|
           if server_session.things_that_were_set.keys.include? "node_hash_for_localhost"
-            server_session.things_that_were_set["node_hash_for_localhost"].should == {
-              "environments" => {"some_env"=>{ "rails_env" => "myenv",
-                "servers"=>[ {"hostname"=>"localhost", "roles"=>["role1", "role2"] }, {"hostname"=>"otherhost.com", "roles"=>["role1"]}]}},
-                "chef" => {"root"=>"path_to_cookbooks", "version"=>"0.1982.1234"},
-                "run_list" => ["foo", "bar"],
-                "environment" => {"rails_env" => "myenv", "roles" => ["role1", "role2"], "servers"=>[ {"primary" => [], "hostname"=>"localhost", "roles"=>["role1", "role2"] },
-                  {"primary" => [], "hostname"=>"otherhost.com", "roles"=>["role1"]}]},
-                  "roles" => {"role1" => {"run_list"=>["foo"]}, "role2"=>{"run_list"=>["foo", "bar"]}}}
+            server_session.things_that_were_set["node_hash_for_localhost"]["environment"]["roles"].should == ["role1", "role2"]
+            server_session.things_that_were_set["node_hash_for_localhost"]["run_list"].should == ["foo", "bar"]
           elsif server_session.things_that_were_set.keys.include? "node_hash_for_otherhost"
-            server_session.things_that_were_set["node_hash_for_otherhost"].should == {
-              "environments" => {"some_env"=>{ "rails_env" => "myenv",
-                "servers"=>[{"hostname"=>"localhost", "roles"=>["role1", "role2"]}, {"hostname"=>"otherhost.com", "roles"=>["role1"]}]}},
-                "chef"=>{"root"=>"path_to_cookbooks"},
-                "run_list"=>["foo"],
-                "environment"=>{"rails_env" => "myenv", "roles" => ["role1"], "servers"=>[{"primary" => [], "hostname"=>"localhost", "roles"=>["role1", "role2"]},
-                  {"primary" => [], "hostname"=>"otherhost.com", "roles"=>["role1"]}]},
-                  "roles"=>{"role1"=>{"run_list"=>["foo"]}, "role2"=>{"run_list"=>["foo", "bar"]}}}
+            server_session.things_that_were_set["node_hash_for_otherhost"]["environment"]["roles"].should == ["role1"]
+            server_session.things_that_were_set["node_hash_for_otherhost"]["run_list"].should == ["foo"]
           end
         end
       end
@@ -520,6 +508,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
         it "invokes chef-solo on db hosts then app and web only hosts" do
@@ -557,6 +546,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
 
@@ -608,6 +598,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
         it "invokes chef-solo on dep0 then dep1 and dep2 then finally dep3" do
@@ -658,6 +649,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
         it "invokes chef-solo on dep0 then dep1 and dep2 then finally dep3" do
@@ -1004,6 +996,7 @@ describe "chef_cap" do
     it "shoves the value into the node json alongside branch" do
       ENV['rev'] = "123"
       ENV['branch'] = "somebranch"
+      chef_cap.stub(:system).and_return(true)
       chef_cap.stub!(:put => "stubbed")
       chef_cap.stub!(:upload => "stubbed")
       chef_cap.stub!(:sudo => "stubbed")
@@ -1012,19 +1005,10 @@ describe "chef_cap" do
       chef_cap.parallel_mocks << proc { |server_session|
         server_session.stub!(:put => "stubbed")
         server_session.stub!(:sudo => "stubbed")
-        server_session.should_receive(:set).with("node_hash_for_localhost",
-          {
-          "chef"=>{"root"=>"path_to_cookbooks"},
-          "environments" => { "some_env"=>{"servers"=>[{"hostname"=>"localhost", "roles"=>["role1", "role2"]}]}},
-          "shared"=>{"foo"=>"bar"},
-          "foo"=>"bar",
-          "something"=>"other",
-          "environment"=> {"revision"=>"123", "branch" => "somebranch",
-            "roles" => ["role1"],
-            "servers"=>[{"primary" => [], "hostname"=>"localhost", "roles"=>["role1", "role2"]}]},
-            "roles"=>{"role1"=>{"something"=>"other"}},
-          "run_list"=>nil
-        })
+        server_session.should_receive(:set) do |key, value|
+          value["environment"]["revision"].should == "123"
+          value["environment"]["branch"].should == "somebranch"
+        end.twice
       }
       chef_cap.cap_task["chef:deploy"].call
     end
