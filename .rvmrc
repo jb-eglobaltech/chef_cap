@@ -1,1 +1,1 @@
-rvm 1.9.2-p180-patched@chef_cap --create
+rvm 1.9.3-p0@chef_cap --create
