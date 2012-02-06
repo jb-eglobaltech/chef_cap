@@ -218,7 +218,7 @@ namespace :chef do
   end
 
   task :setup_to_run_chef_solo do
-    set :debug_flag, ENV['QUIET'] ? '' : '-l debug'
+    set :debug_flag, ENV['DEBUG'] ? '-l debug' : ''
     exec_chef_solo = "env PATH=$PATH:/usr/sbin `cat #{rvm_bin_path}` default exec chef-solo -c /tmp/chef-cap-solo-#{rails_env}.rb #{debug_flag}"
     set :run_chef_solo_deploy_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`.json"
     set :run_chef_solo_rollback_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`-rollback.json"

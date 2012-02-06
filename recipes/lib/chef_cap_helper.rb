@@ -1,7 +1,7 @@
 class ChefCapHelper
   class << self
     def debug(message)
-      puts "** #{message}" unless ENV["QUIET"]
+      puts "** #{message}" if ENV["DEBUG"]
     end
 
     def parse_hash(hash, prefix = nil)
