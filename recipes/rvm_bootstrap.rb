@@ -6,6 +6,7 @@ before "chef:setup", "rvm:bootstrap"
 namespace :rvm do
   desc "Create a standalone rvm installation with a default ruby to use with chef-solo"
   task :bootstrap do
+    set :rvm_ruby_version, (ChefDnaParser.parsed["environment"]["rvm_ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
     rvm_standup_script = <<-SH
       #!/bin/bash
       #
@@ -30,6 +31,11 @@ namespace :rvm do
         bash -s stable < $RVM_TEMP_FILE
         rm -f $RVM_TEMP_FILE
         which rvm > /tmp/.chef_cap_rvm_path
+        `/tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
+        if [ $? -eq 0 ]; then
+          echo "No rvm rubies installed. Installing from capistrano setting :rvm_ruby_version #{rvm_ruby_version}"
+          `cat /tmp/.chef_cap_rvm_path` install #{rvm_ruby_version}
+        fi
       else
         echo "FATAL ERROR: I have no idea how to download RVM without curl!"
         exit 1
