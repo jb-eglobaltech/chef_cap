@@ -17,6 +17,11 @@ namespace :rvm do
         echo "Found RVM: " `which rvm`
         echo "Looks like RVM is already on this machine. Recording to /tmp/.chef_cap_rvm_path"
         which rvm > /tmp/.chef_cap_rvm_path
+        `cat /tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
+        if [ $? -eq 0 ]; then
+          echo "No rvm rubies installed. Installing from capistrano setting :rvm_ruby_version #{rvm_ruby_version}"
+          `cat /tmp/.chef_cap_rvm_path` install #{rvm_ruby_version}
+        fi
         exit 0
       else
         echo "Could not find RVM, PATH IS: ${PATH}"
@@ -31,7 +36,7 @@ namespace :rvm do
         bash -s stable < $RVM_TEMP_FILE
         rm -f $RVM_TEMP_FILE
         which rvm > /tmp/.chef_cap_rvm_path
-        `/tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
+        `cat /tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
         if [ $? -eq 0 ]; then
           echo "No rvm rubies installed. Installing from capistrano setting :rvm_ruby_version #{rvm_ruby_version}"
           `cat /tmp/.chef_cap_rvm_path` install #{rvm_ruby_version}
