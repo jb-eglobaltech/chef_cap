@@ -9,6 +9,7 @@ ChefCapConfiguration.configuration = self
 ChefDnaParser.load_dna
 
 before "deploy", "chef:setup"
+before "chef:setup", "bootstrap:ruby"
 
 set :application, ChefDnaParser.parsed["application"]["name"] rescue nil
 set :repository, ChefDnaParser.parsed["application"]["repository"] rescue nil
@@ -154,15 +155,22 @@ else
   set :chef_version, default_chef_version
 end
 
-set :rvm_bin_path, "/tmp/.chef_cap_rvm_path"
+set :debug_flag, ENV['DEBUG'] ? '-l debug' : ''
 
 namespace :chef do
-  desc "Setup chef solo on the server(s)"
   task :setup do
-    gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
-    install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc"
-    sudo "`cat #{rvm_bin_path}` default exec #{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
-    sudo "`cat #{rvm_bin_path}` default exec which chef-solo"
+    case ruby_version_switcher
+    when 'rbenv'
+      gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
+      install_chef_cmd = "gem install chef --no-ri --no-rdoc"
+      run "#{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
+      run "rbenv rehash"
+    else
+      gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
+      install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc"
+      sudo "`cat #{rvm_bin_path}` default exec #{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
+      sudo "`cat #{rvm_bin_path}` default exec which chef-solo"
+    end
   end
 
   desc "Run chef-solo on the server(s)"
@@ -218,8 +226,6 @@ namespace :chef do
   end
 
   task :setup_to_run_chef_solo do
-    set :debug_flag, ENV['DEBUG'] ? '-l debug' : ''
-    exec_chef_solo = "env PATH=$PATH:/usr/sbin `cat #{rvm_bin_path}` default exec chef-solo -c /tmp/chef-cap-solo-#{rails_env}.rb #{debug_flag}"
     set :run_chef_solo_deploy_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`.json"
     set :run_chef_solo_rollback_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`-rollback.json"
     set :run_chef_solo_block, { :block => lambda { |command_to_run|

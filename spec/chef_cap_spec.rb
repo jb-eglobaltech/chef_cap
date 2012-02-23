@@ -302,6 +302,32 @@ describe "chef_cap" do
 
   end
 
+  describe "rbenv bootstrap" do
+    it "uploads a shell script to the server and runs it as root" do
+      @test_dna = <<-ERB
+      {
+        "chef": {
+          "root": "path_to_cookbooks"
+        },
+        "environments": {
+          "some_env": {
+              "ruby_version_switcher": "rbenv",
+              "rails_env": "my_env"
+            }
+        }
+      }
+      ERB
+
+      chef_cap.cap_task[:some_env].call
+      chef_cap.cap_namespace[:bootstrap].should_not be_nil
+      chef_cap.cap_task["bootstrap:rbenv"].should_not be_nil
+
+      chef_cap.should_receive(:put)
+      chef_cap.should_receive(:run).with("/tmp/chef-cap-my_env-rbenv-standup.sh")
+      chef_cap.cap_task["bootstrap:rbenv"].call
+    end
+  end
+
   describe "rvm bootstrap" do
     it "uploads a shell script to the server and runs it as root" do
       @test_dna = <<-ERB
@@ -318,17 +344,12 @@ describe "chef_cap" do
       ERB
 
       chef_cap.cap_task[:some_env].call
-      chef_cap.cap_namespace[:rvm].should_not be_nil
-      chef_cap.cap_task["rvm:bootstrap"].should_not be_nil
+      chef_cap.cap_namespace[:bootstrap].should_not be_nil
+      chef_cap.cap_task["bootstrap:rvm"].should_not be_nil
 
       chef_cap.should_receive(:put)
       chef_cap.should_receive(:sudo).with("/tmp/chef-cap-my_env-rvm-standup.sh")
-      chef_cap.cap_task["rvm:bootstrap"].call
-    end
-
-    it "adds a dependency check on the rvm command" do
-      chef_cap.cap_depends["rvm"].should_not be_nil
-      chef_cap.cap_depends["rvm"].should == { :remote => :command }
+      chef_cap.cap_task["bootstrap:rvm"].call
     end
   end
 
@@ -344,25 +365,19 @@ describe "chef_cap" do
 
   describe "namespace :chef" do
 
-    it "adds a remote dependency on chef-solo" do
-      chef_cap.cap_depends["chef-solo"].should_not be_nil
-      chef_cap.cap_depends["chef-solo"].should == { :remote => :command }
-    end
-
     it "runs chef:setup before chef:deploy" do
       chef_cap.cap_before["chef:deploy"].should_not be_nil
       chef_cap.cap_before["chef:deploy"].should include("chef:setup")
     end
 
-    it "runs rvm:bootstrap before chef:setup" do
+    it "runs bootstrap:ruby before chef:setup" do
       chef_cap.cap_before["chef:setup"].should_not be_nil
-      chef_cap.cap_before["chef:setup"].should include("rvm:bootstrap")
+      chef_cap.cap_before["chef:setup"].should include("bootstrap:ruby")
     end
 
     describe "task :deploy" do
-
-      before do
-        @test_dna = <<-JS
+      let(:test_dna) do
+        <<-JS
         {
           "chef": {
             "root": "path_to_cookbooks",
@@ -389,7 +404,10 @@ describe "chef_cap" do
           }
         }
         JS
+      end
 
+      before do
+        @test_dna = test_dna
         chef_cap.cap_task[:some_env].should_not be_nil
         chef_cap.cap_task[:some_env].call
         chef_cap.stub(:system).and_return(true)
@@ -459,23 +477,78 @@ describe "chef_cap" do
         chef_cap.cap_task["chef:deploy"].call
       end
 
-      it "sets up chef gem" do
-        chef_cap.cap_servers.should_not be_empty
-        chef_cap.should_receive(:sudo).ordered.with("`cat /tmp/.chef_cap_rvm_path` default exec gem specification --version '>=0.1982.1234' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }' || sudo `cat /tmp/.chef_cap_rvm_path` default exec gem install chef --no-ri --no-rdoc && echo 'Chef Solo already on this server.'").and_return("mocked")
-        chef_cap.should_receive(:sudo).ordered.with("`cat /tmp/.chef_cap_rvm_path` default exec which chef-solo").and_return("mocked")
-        chef_cap.cap_task["chef:setup"].call
+      context "using rvm" do
+        it "sets up chef gem" do
+          chef_cap.cap_servers.should_not be_empty
+          chef_cap.should_receive(:sudo).ordered.with("`cat /tmp/.chef_cap_rvm_path` default exec gem specification --version '>=0.1982.1234' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }' || sudo `cat /tmp/.chef_cap_rvm_path` default exec gem install chef --no-ri --no-rdoc && echo 'Chef Solo already on this server.'").and_return("mocked")
+          chef_cap.should_receive(:sudo).ordered.with("`cat /tmp/.chef_cap_rvm_path` default exec which chef-solo").and_return("mocked")
+
+          chef_cap.cap_task["bootstrap:ruby"].call
+          chef_cap.cap_task["chef:setup"].call
+        end
+
+        it "installs rvm + ruby and run it if it does not exist" do
+          chef_cap.cap_servers.should_not be_empty
+          chef_cap.stub!(:put => "stubbed")
+          chef_cap.should_receive(:sudo).ordered.with("/tmp/chef-cap-myenv-rvm-standup.sh").and_return("mocked")
+          chef_cap.cap_task["bootstrap:rvm"].call
+        end
       end
 
-      it "installs rvm + ruby and run it if it does not exist" do
-        chef_cap.cap_servers.should_not be_empty
-        chef_cap.stub!(:put => "stubbed")
-        chef_cap.should_receive(:sudo).ordered.with("/tmp/chef-cap-myenv-rvm-standup.sh").and_return("mocked")
-        chef_cap.cap_task["rvm:bootstrap"].call
-      end
+      context "using rbenv" do
 
+        let(:test_dna) do
+          <<-JS
+        {
+          "chef": {
+            "root": "path_to_cookbooks",
+            "version": "0.1982.1234"
+          },
+          "environments": {
+            "some_env": {
+              "rails_env": "myenv",
+              "ruby_version_switcher": "rbenv",
+              "servers": [
+                {
+                  "hostname": "localhost",
+                  "roles": ["role1", "role2"]
+                },
+                {
+                  "hostname": "otherhost.com",
+                  "roles": ["role1"]
+                }
+              ]
+            }
+          },
+          "roles": {
+            "role1": { "run_list": ["foo"] },
+            "role2": { "run_list": ["foo", "bar"] }
+          }
+        }
+          JS
+        end
+
+        it "sets up chef gem" do
+          chef_cap.cap_servers.should_not be_empty
+          chef_cap.stub!(:put => "stubbed")
+          chef_cap.should_receive(:run).ordered.with("gem specification --version '>=0.1982.1234' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }' || gem install chef --no-ri --no-rdoc && echo 'Chef Solo already on this server.'").and_return("mocked")
+          chef_cap.should_receive(:run).ordered.with("rbenv rehash").and_return("mocked")
+
+          chef_cap.cap_task["bootstrap:ruby"].call
+          chef_cap.cap_task["chef:setup"].call
+        end
+
+        it "installs rbenv + ruby and run it if it does not exist" do
+          chef_cap.cap_servers.should_not be_empty
+          chef_cap.stub!(:put => "stubbed")
+          chef_cap.should_receive(:run).ordered.with("/tmp/chef-cap-myenv-rbenv-standup.sh").and_return("mocked")
+          chef_cap.cap_task["bootstrap:rbenv"].call
+        end
+      end
     end
 
     describe "task :run_chef_solo" do
+
       context "with a db role" do
         before do
           @test_dna = <<-JS
@@ -508,6 +581,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
@@ -516,6 +590,7 @@ describe "chef_cap" do
 
           chef_cap.should_receive(:sudo).ordered.with(/.*chef-solo.*/, :hosts => ["dbhost"]).and_return("mocked")
           chef_cap.should_receive(:sudo).ordered.with(/.*chef-solo.*/, :hosts => ["apphost"]).and_return("mocked")
+          chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:run_chef_solo"].call
         end
       end
@@ -546,6 +621,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
@@ -598,6 +674,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 
@@ -649,6 +726,7 @@ describe "chef_cap" do
 
           chef_cap.cap_task[:some_env].should_not be_nil
           chef_cap.cap_task[:some_env].call
+          chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:setup_to_run_chef_solo"].call
         end
 

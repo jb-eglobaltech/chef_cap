@@ -1,11 +1,6 @@
-depend :remote, :command, "rvm"
-depend :remote, :command, "chef-solo"
-
-before "chef:setup", "rvm:bootstrap"
-
-namespace :rvm do
+namespace :bootstrap do
   desc "Create a standalone rvm installation with a default ruby to use with chef-solo"
-  task :bootstrap do
+  task :rvm do
     set :rvm_ruby_version, (ChefDnaParser.parsed["environment"]["rvm_ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
     rvm_standup_script = <<-SH
       #!/bin/bash
