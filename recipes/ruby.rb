@@ -2,7 +2,7 @@ namespace :bootstrap do
   desc "Create a standalone rbenv installation with a default ruby to use with chef-solo"
   task :ruby do
     local_rvs = ruby_version_switcher rescue 'rvm'
-    local_env = rails_env rescue 'unkown'
+    local_env = rails_env rescue 'unknown'
 
     case local_rvs
     when 'rbenv'

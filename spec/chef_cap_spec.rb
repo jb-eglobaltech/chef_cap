@@ -47,7 +47,10 @@ describe "chef_cap" do
         },
         "environments": {
           "defaults": {
-            "user": "myuser"
+            "user": "myuser",
+            "ruby": {
+              "version": "1.9.2-HEAD"
+            }
           },
           "some_env": {
             "user": "newenvuser",
@@ -66,6 +69,7 @@ describe "chef_cap" do
     chef_cap.cap_variable[:repository].should == "git@somehost:user/repo.git"
     chef_cap.cap_variable[:scm].should == :git
     chef_cap.cap_variable[:user].should == "myuser"
+    chef_cap.cap_variable[:ruby_version].should == "1.9.2-HEAD"
 
     chef_cap.cap_variable[:rails_env].should be_nil
     chef_cap.cap_task[:some_env].should_not be_nil

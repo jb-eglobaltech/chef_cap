@@ -75,6 +75,18 @@ Optional JSON keys:
   { "rollback_run_list": [] }
   { "deploy_recipe": "[some_cookbook]::[some_recipe]" }
 
+=== RVM/RBENV
+
+You can set which ruby version switcher to use. RVM is the default. ruby_version can be set as well.
+
+  {
+    "environments": {
+      ENVIRONMENT: {
+        "ruby_version_switcher": "rvm",
+        "ruby_version": "1.9.3-p125"
+      }
+    }
+  }
 
 == REQUIREMENTS
 

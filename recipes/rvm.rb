@@ -1,7 +1,7 @@
 namespace :bootstrap do
   desc "Create a standalone rvm installation with a default ruby to use with chef-solo"
   task :rvm do
-    set :rvm_ruby_version, (ChefDnaParser.parsed["environment"]["rvm_ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
+    set :ruby_version, (ChefDnaParser.parsed["environment"]["ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
     rvm_standup_script = <<-SH
       #!/bin/bash
       #
@@ -14,14 +14,14 @@ namespace :bootstrap do
         which rvm > /tmp/.chef_cap_rvm_path
         `cat /tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
         if [ $? -eq 0 ]; then
-          echo "No rvm rubies installed. Installing from capistrano setting :rvm_ruby_version #{rvm_ruby_version}"
-          `cat /tmp/.chef_cap_rvm_path` install #{rvm_ruby_version}
-          `cat /tmp/.chef_cap_rvm_path` --default use #{rvm_ruby_version}
+          echo "No rvm rubies installed. Installing from capistrano setting :ruby_version #{ruby_version}"
+          `cat /tmp/.chef_cap_rvm_path` install #{ruby_version}
+          `cat /tmp/.chef_cap_rvm_path` --default use #{ruby_version}
         fi
         `cat /tmp/.chef_cap_rvm_path` list | grep "Default ruby not set"
         if [ $? -eq 0 ]; then
           echo "No rvm default set."
-          `cat /tmp/.chef_cap_rvm_path` alias create default #{rvm_ruby_version}
+          `cat /tmp/.chef_cap_rvm_path` alias create default #{ruby_version}
         fi
         exit 0
       else
@@ -39,10 +39,10 @@ namespace :bootstrap do
         which rvm > /tmp/.chef_cap_rvm_path
         `cat /tmp/.chef_cap_rvm_path` list | grep "No rvm rubies installed"
         if [ $? -eq 0 ]; then
-          echo "No rvm rubies installed. Installing from capistrano setting :rvm_ruby_version #{rvm_ruby_version}"
-          `cat /tmp/.chef_cap_rvm_path` install #{rvm_ruby_version}
-          `cat /tmp/.chef_cap_rvm_path` --default use #{rvm_ruby_version}
-          `cat /tmp/.chef_cap_rvm_path` alias create default #{rvm_ruby_version}
+          echo "No rvm rubies installed. Installing from capistrano setting :ruby_version #{ruby_version}"
+          `cat /tmp/.chef_cap_rvm_path` install #{ruby_version}
+          `cat /tmp/.chef_cap_rvm_path` --default use #{ruby_version}
+          `cat /tmp/.chef_cap_rvm_path` alias create default #{ruby_version}
         fi
       else
         echo "FATAL ERROR: I have no idea how to download RVM without curl!"

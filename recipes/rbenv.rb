@@ -1,8 +1,8 @@
 namespace :bootstrap do
   desc "Create a standalone rbenv installation with a default ruby to use with chef-solo"
   task :rbenv do
-    set :rvm_ruby_version, (ChefDnaParser.parsed["environment"]["rvm_ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
-    set :rbenv_ruby_version, rvm_ruby_version.gsub(/^ruby\-/,'')
+    set :ruby_version, (ChefDnaParser.parsed["environment"]["ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
+    set :rbenv_ruby_version, ruby_version.gsub(/^ruby\-/,'')
     standup_script = <<-SH
       #!/bin/bash
       #
@@ -11,9 +11,8 @@ namespace :bootstrap do
 
       HAVE_RBENV_ALREADY=`which rbenv 2>/dev/null`
       if [ $? != 0 ]; then
-        ## Install rbenv dependencies
-        sudo yum install -y automake gcc make libtool curl zlib zlib-devel patch readline readline-devel libffi-devel openssl openssl-devel git
-
+        echo "Install rbenv dependencies..."
+        sudo yum install -y git
         echo "Building rbenv..."
         git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
         # Add rbenv to your path
@@ -36,6 +35,8 @@ namespace :bootstrap do
       # Install Ruby #{rbenv_ruby_version}
       HAVE_CORRECT_VERSION=`rbenv versions | grep '#{rbenv_ruby_version}' | wc -l`
       if [ $HAVE_CORRECT_VERSION -eq 0 ]; then
+        echo "Installing Ruby dependencies..."
+        sudo yum install -y automake gcc make libtool curl zlib zlib-devel patch readline readline-devel libffi-devel openssl openssl-devel
         echo "Installing #{rbenv_ruby_version}..."
         rbenv install #{rbenv_ruby_version}
         rbenv global #{rbenv_ruby_version}
