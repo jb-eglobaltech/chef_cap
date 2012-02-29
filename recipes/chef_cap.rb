@@ -159,16 +159,19 @@ set :debug_flag, ENV['DEBUG'] ? '-l debug' : ''
 
 namespace :chef do
   task :setup do
+    bundler_install_cmd = "gem install bundler --no-ri --no-rdoc"
     case ruby_version_switcher
     when 'rbenv'
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
       install_chef_cmd = "gem install chef --no-ri --no-rdoc"
       run "#{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
+      run bundler_install_cmd
       run "rbenv rehash"
     else
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
       install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc"
       sudo "`cat #{rvm_bin_path}` default exec #{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
+      sudo "`cat #{rvm_bin_path}` default exec #{bundler_install_cmd}"
       sudo "`cat #{rvm_bin_path}` default exec which chef-solo"
     end
   end

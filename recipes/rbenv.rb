@@ -1,8 +1,8 @@
 namespace :bootstrap do
   desc "Create a standalone rbenv installation with a default ruby to use with chef-solo"
   task :rbenv do
-    set :ruby_version, (ChefDnaParser.parsed["environment"]["ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
-    set :rbenv_ruby_version, ruby_version.gsub(/^ruby\-/,'')
+    set :ruby_version, (ChefDnaParser.parsed["environment"]["ruby_version"] rescue "1.9.3-p0" || "1.9.3-p0")
+    ruby_version.gsub!(/^ruby\-/,'')
     standup_script = <<-SH
       #!/bin/bash
       #
@@ -32,14 +32,14 @@ namespace :bootstrap do
         cd $HOME
       fi;
 
-      # Install Ruby #{rbenv_ruby_version}
-      HAVE_CORRECT_VERSION=`rbenv versions | grep '#{rbenv_ruby_version}' | wc -l`
+      # Install Ruby #{ruby_version}
+      HAVE_CORRECT_VERSION=`rbenv versions | grep '#{ruby_version}' | wc -l`
       if [ $HAVE_CORRECT_VERSION -eq 0 ]; then
         echo "Installing Ruby dependencies..."
         sudo yum install -y automake gcc make libtool curl zlib zlib-devel patch readline readline-devel libffi-devel openssl openssl-devel
-        echo "Installing #{rbenv_ruby_version}..."
-        rbenv install #{rbenv_ruby_version}
-        rbenv global #{rbenv_ruby_version}
+        echo "Installing #{ruby_version}..."
+        rbenv install #{ruby_version}
+        rbenv global #{ruby_version}
         # Rehash!
         rbenv rehash
       fi;

@@ -2,6 +2,9 @@ namespace :bootstrap do
   desc "Create a standalone rvm installation with a default ruby to use with chef-solo"
   task :rvm do
     set :ruby_version, (ChefDnaParser.parsed["environment"]["ruby_version"] rescue "ruby-1.9.3-p0" || "ruby-1.9.3-p0")
+    if ruby_version =~ /^[0-9]/
+      ruby_version = "ruby-#{ruby_version}"
+    end
     rvm_standup_script = <<-SH
       #!/bin/bash
       #
