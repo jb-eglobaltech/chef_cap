@@ -1,7 +1,11 @@
 namespace :bootstrap do
   desc "Create a standalone rbenv installation with a default ruby to use with chef-solo"
   task :rbenv do
-    set :ruby_version, default_ruby_version
+    begin
+      ruby_version
+    rescue
+      set :ruby_version, default_ruby_version
+    end
     ruby_version.gsub!(/^ruby\-/,'')
     standup_script = <<-SH
       #!/bin/bash

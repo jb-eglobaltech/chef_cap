@@ -1,7 +1,11 @@
 namespace :bootstrap do
   desc "Create a standalone rvm installation with a default ruby to use with chef-solo"
   task :rvm do
-    set :ruby_version, default_ruby_version
+    begin
+      ruby_version
+    rescue
+      set :ruby_version, default_ruby_version
+    end
     if ruby_version =~ /^[0-9]/
       ruby_version = "ruby-#{ruby_version}"
     end
