@@ -13,6 +13,7 @@ before "chef:setup", "bootstrap:ruby"
 
 set :application, ChefDnaParser.parsed["application"]["name"] rescue nil
 set :repository, ChefDnaParser.parsed["application"]["repository"] rescue nil
+set :default_ruby_version, "1.9.3-p0"
 
 ChefCapConfiguration.set_repository_settings
 
@@ -45,6 +46,9 @@ if ChefDnaParser.parsed["environments"]
       default_environment["RAILS_ENV"] = rails_env
 
       ChefCapHelper.parse_hash(environment_hash)
+      merged_environment = ChefDnaParser.parsed["environments"]["defaults"] || {} rescue {}
+      environment_hash.each { |k, v| ChefCapHelper.recursive_merge(merged_environment || {}, k, v) }
+      set :environment, merged_environment
 
       (environment_hash["servers"] || []).each do |server|
         if server["roles"] && server["hostname"]

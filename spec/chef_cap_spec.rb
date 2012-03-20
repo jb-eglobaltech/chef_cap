@@ -128,6 +128,31 @@ describe "chef_cap" do
     end
   end
 
+  describe "merging defaults and a specific environment" do
+    it "sets the RAILS_ENV to rails_env" do
+      @test_dna = <<-ERB
+      {
+        "chef": {
+          "root": "path_to_cookbooks"
+        },
+        "environments": {
+          "defaults": {
+              "rails_env": "default",
+              "foo": "bar"
+          },
+          "some_env": {
+              "rails_env": "my_env"
+          }
+        }
+      }
+      ERB
+
+      chef_cap.cap_task[:some_env].call
+      chef_cap.cap_variable[:environment].should_not be_nil
+      chef_cap.cap_variable[:environment]["rails_env"].should == "my_env"
+      chef_cap.cap_variable[:environment]["foo"].should == "bar"
+    end
+  end
 
   describe ":repositories" do
     context "svn" do
