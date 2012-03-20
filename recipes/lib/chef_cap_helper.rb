@@ -28,7 +28,18 @@ class ChefCapHelper
       when "Array_Array"
         hash[key] = hash[key] | value
       when "Hash_Hash"
-        hash[key] = hash[key].merge(value)
+        hash[key].merge!(value) do |k, oldvalue, newvalue|
+          case "#{oldvalue.class}_#{newvalue.class}"
+            when "Hash_Hash"
+              if oldvalue.has_key?(oldvalue) && newvalue.has_key?(newvalue)
+                recursive_merge(oldvalue, k, newvalue)
+              else
+                oldvalue.merge(newvalue)
+              end
+            else
+              newvalue
+            end
+        end
       else
         hash[key] = value
       end

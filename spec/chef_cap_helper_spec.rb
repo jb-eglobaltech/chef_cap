@@ -116,6 +116,13 @@ describe ChefCapHelper do
       resulting_hash["key"].should == { "one" => nil }
     end
 
+    it "merges hashes recursively" do
+      original_hash = {"key" => { "one" => { "two"  => "three", "five" => "six" }}}
+
+      resulting_hash = ChefCapHelper.recursive_merge(original_hash, "key", {"one" => { "two" => "four" }})
+      resulting_hash["key"].should == { "one" => { "two" => "four", "five" => "six" } }
+    end
+
     it "merge will overwrite hashes with arrays" do
       original_hash = {"key" => {"array" => ["one"] }}
 
