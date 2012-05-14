@@ -166,7 +166,7 @@ namespace :chef do
     case ruby_version_switcher
     when 'rbenv'
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
-      install_chef_cmd = "gem install chef --no-ri --no-rdoc"
+      install_chef_cmd = "gem install chef --no-ri --no-rdoc --version=#{chef_version}"
       run "#{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
 
       gem_check_for_bundler_cmd = "gem specification --version '>0' bundler 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
@@ -175,7 +175,7 @@ namespace :chef do
       run "rbenv rehash"
     else
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
-      install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc"
+      install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc --version=#{chef_version}"
       sudo "`cat #{rvm_bin_path}` default exec #{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
 
       gem_check_for_bundler_cmd = "gem specification --version '>0' bundler 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
