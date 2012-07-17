@@ -18,7 +18,7 @@ namespace :bootstrap do
         echo "Install rbenv dependencies..."
         sudo yum install -y git
         echo "Building rbenv..."
-        git clone git://github.com/sstephenson/rbenv.git ~/.rbenv
+        git clone git://github.com/sstephenson/rbenv.git ~/.rbenv || exit 1
         # Add rbenv to your path
         echo 'export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"' >> .bashrc
         echo 'eval "$(rbenv init -)"' >> .bashrc
@@ -29,9 +29,8 @@ namespace :bootstrap do
       HAVE_RUBY_BUILD=`which ruby-build 2>/dev/null`
       if [ $? != 0 ]; then
         echo "Building ruby-build..."
-        cd /tmp
-        git clone git://github.com/sstephenson/ruby-build.git
-        cd ruby-build
+        git clone git://github.com/sstephenson/ruby-build.git /tmp/ruby-build || exit 1
+        cd /tmp/ruby-build
         PREFIX=$HOME ./install.sh
         cd $HOME
       fi;
@@ -47,6 +46,8 @@ namespace :bootstrap do
         # Rehash!
         rbenv rehash
       fi;
+
+      rbenv versions | grep '#{ruby_version}'
     SH
     put standup_script, "/tmp/chef-cap-#{rails_env}-rbenv-standup.sh", :mode => "0700"
     run "/tmp/chef-cap-#{rails_env}-rbenv-standup.sh"
