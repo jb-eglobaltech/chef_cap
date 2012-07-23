@@ -193,7 +193,7 @@ namespace :chef do
     file = Tempfile.new("chef-cap-#{rails_env}")
     file.close
     compressed_chef = file.path
-    system("cd #{chef_root_path}/../ && tar cjf #{compressed_chef} #{File.basename(chef_root_path)}")
+    system("cd #{chef_root_path}/../ && tar cjf #{compressed_chef} --exclude .git --exclude \"*.log\" #{File.basename(chef_root_path)}")
     upload compressed_chef, "/tmp/chef-cap-#{rails_env}.tbz", :mode => "0700"
     sudo "mkdir -p /tmp/chef-cap-#{rails_env}"
     sudo "tar xjf /tmp/chef-cap-#{rails_env}.tbz -C /tmp/chef-cap-#{rails_env}"
