@@ -238,8 +238,8 @@ namespace :chef do
   end
 
   task :setup_to_run_chef_solo do
-    set :run_chef_solo_deploy_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`.json"
-    set :run_chef_solo_rollback_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-`hostname`-rollback.json"
+    set :run_chef_solo_deploy_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-$CAPISTRANO:HOST$.json"
+    set :run_chef_solo_rollback_command, "#{exec_chef_solo} -j /tmp/chef-cap-#{rails_env}-$CAPISTRANO:HOST$-rollback.json"
     set :run_chef_solo_block, { :block => lambda { |command_to_run|
       hosts_that_have_run = []
       unless role_order.empty?
