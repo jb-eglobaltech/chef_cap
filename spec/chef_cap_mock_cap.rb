@@ -93,7 +93,7 @@ end
 def unset(key)
   @variables.delete(key)
   self.instance_eval(<<-EOS)
-    undef #{key}
+    undef #{key} rescue nil
   EOS
 end
 

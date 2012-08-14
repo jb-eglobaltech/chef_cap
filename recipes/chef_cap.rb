@@ -90,11 +90,17 @@ namespace :ssh do
 
   desc "Set any defined SSH options"
   task :set_options do
-    ssh_options[:paranoid] = ssh_options_paranoid rescue nil
-    ssh_options[:keys] = ssh_options_keys rescue nil
-    ssh_options[:forward_agent] = ssh_options_forward_agent rescue nil
-    ssh_options[:username] = ssh_options_username rescue user rescue nil
-    ssh_options[:port] = ssh_options_port rescue nil
+    options = {}
+    options[:config] = ssh_options_config rescue nil
+    options[:paranoid] = ssh_options_paranoid rescue nil
+    options[:keys] = ssh_options_keys rescue nil
+    options[:forward_agent] = ssh_options_forward_agent rescue nil
+    options[:username] = ssh_options_username rescue user rescue nil
+    options[:port] = ssh_options_port rescue nil
+    options.reject! { |key| options[key].nil? }
+    options.each_pair do |key, value|
+     ssh_options[key] = value
+    end
   end
 end
 before "chef:setup", "ssh:transfer_keys"
