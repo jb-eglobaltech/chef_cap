@@ -229,7 +229,8 @@ describe "chef_cap" do
               "authorized_pub_file": "#{File.join(File.dirname(__FILE__), '..', 'fixtures', 'ssh_public_key')}",
               "known_hosts": "knownhostscontent",
               "options": {
-                "keys": "some_ssh_key_path"
+                "keys": "some_ssh_key_path",
+                "username": null
               }
             }
           },
@@ -311,6 +312,12 @@ describe "chef_cap" do
       it "adds a after <environment> hook to call ssh:set_options" do
         chef_cap.cap_after[:nossh].should_not be_nil
         chef_cap.cap_after[:nossh].should include("ssh:set_options")
+      end
+
+      it "does not set nil values" do
+        chef_cap.cap_task["ssh:set_options"].call
+        chef_cap.cap_ssh_options.has_key?(:username).should be_false
+        chef_cap.cap_ssh_options.has_key?(:config).should be_false
       end
     end
 
