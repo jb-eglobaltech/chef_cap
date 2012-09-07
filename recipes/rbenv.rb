@@ -11,7 +11,7 @@ namespace :bootstrap do
       #!/bin/bash
       #
       # And now install rbenv
-      export PATH=$HOME/bin:$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH
+      export PATH=$HOME/bin:$HOME/.rbenv/bin:$PATH
 
       HAVE_RBENV_ALREADY=`which rbenv 2>/dev/null`
       if [ $? != 0 ]; then
@@ -20,7 +20,7 @@ namespace :bootstrap do
         echo "Building rbenv..."
         git clone git://github.com/sstephenson/rbenv.git ~/.rbenv || exit 1
         # Add rbenv to your path
-        echo 'export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"' >> .bashrc
+        echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> .bashrc
         echo 'eval "$(rbenv init -)"' >> .bashrc
         source ~/.bash_profile
       fi;
