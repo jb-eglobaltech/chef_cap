@@ -6,21 +6,19 @@ namespace :bootstrap do
 
     case local_rvs
     when 'rbenv'
-
-      set :default_environment, {
-        'PATH' => "$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH:/usr/sbin"
-      }
       set :ruby_version_switcher, "rbenv"
-      set :exec_chef_solo, "chef-solo -c /tmp/chef-cap-solo-#{local_env}.rb #{debug_flag}"
+      set :rbenv_bin_path, "/tmp/.chef_cap_rbenv_path"
+      set :exec_chef_solo, "`cat #{rbenv_bin_path}` exec chef-solo -c /tmp/chef-cap-solo-#{local_env}.rb #{debug_flag}"
     else
       ## rvm is the default
-      set :default_environment, {
-        'PATH' => "$PATH:/usr/sbin"
-      }
       set :ruby_version_switcher, "rvm"
       set :rvm_bin_path, "/tmp/.chef_cap_rvm_path"
       set :exec_chef_solo, "`cat #{rvm_bin_path}` default exec chef-solo -c /tmp/chef-cap-solo-#{local_env}.rb #{debug_flag}"
     end
+
+    set :default_environment, {
+      'PATH' => "$PATH:/usr/sbin"
+    }
 
     depend :remote, :command, ruby_version_switcher
     depend :remote, :command, "chef-solo"

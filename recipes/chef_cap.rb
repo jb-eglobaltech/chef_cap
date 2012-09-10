@@ -172,10 +172,10 @@ namespace :chef do
     case ruby_version_switcher
     when 'rbenv'
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
-      install_chef_cmd = "gem install chef --no-ri --no-rdoc --version=#{chef_version}"
-      run "#{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
+      install_chef_cmd = "`cat #{rbenv_bin_path}` exec gem install chef --no-ri --no-rdoc --version=#{chef_version}"
+      run "`cat #{rbenv_bin_path}` exec #{gem_check_for_chef_cmd} || #{install_chef_cmd} && echo 'Chef Solo already on this server.'"
 
-      run "rbenv rehash"
+      run "`cat #{rbenv_bin_path}` rehash"
     else
       gem_check_for_chef_cmd = "gem specification --version '>=#{chef_version}' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }'"
       install_chef_cmd = "sudo `cat #{rvm_bin_path}` default exec gem install chef --no-ri --no-rdoc --version=#{chef_version}"

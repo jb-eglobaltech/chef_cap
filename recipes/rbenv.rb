@@ -36,8 +36,8 @@ namespace :bootstrap do
       fi;
 
       # Install Ruby #{ruby_version}
-      HAVE_CORRECT_VERSION=`rbenv versions | grep '#{ruby_version}' | wc -l`
-      if [ $HAVE_CORRECT_VERSION -eq 0 ]; then
+      HAVE_CORRECT_VERSION=`rbenv versions | grep '#{ruby_version}'`
+      if [ $? != 0 ]; then
         echo "Installing Ruby dependencies..."
         sudo yum install -y automake gcc make libtool curl zlib zlib-devel patch readline readline-devel libffi-devel openssl openssl-devel
         echo "Installing #{ruby_version}..."
@@ -47,6 +47,7 @@ namespace :bootstrap do
         rbenv rehash
       fi;
 
+      echo "env RBENV_ROOT=`rbenv root` `which rbenv`" > /tmp/.chef_cap_rbenv_path
       rbenv versions | grep '#{ruby_version}'
     SH
     put standup_script, "/tmp/chef-cap-#{rails_env}-rbenv-standup.sh", :mode => "0700"

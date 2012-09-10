@@ -567,8 +567,8 @@ describe "chef_cap" do
         it "sets up chef gem" do
           chef_cap.cap_servers.should_not be_empty
           chef_cap.stub!(:put => "stubbed")
-          chef_cap.should_receive(:run).ordered.with("gem specification --version '>=0.1982.1234' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }' || gem install chef --no-ri --no-rdoc --version=0.1982.1234 && echo 'Chef Solo already on this server.'").and_return("mocked")
-          chef_cap.should_receive(:run).ordered.with("rbenv rehash").and_return("mocked")
+          chef_cap.should_receive(:run).ordered.with("`cat /tmp/.chef_cap_rbenv_path` exec gem specification --version '>=0.1982.1234' chef 2>&1 | awk 'BEGIN { s = 0 } /^name:/ { s = 1; exit }; END { if(s == 0) exit 1 }' || `cat /tmp/.chef_cap_rbenv_path` exec gem install chef --no-ri --no-rdoc --version=0.1982.1234 && echo 'Chef Solo already on this server.'").and_return("mocked")
+          chef_cap.should_receive(:run).ordered.with("`cat /tmp/.chef_cap_rbenv_path` rehash").and_return("mocked")
 
           chef_cap.cap_task["bootstrap:ruby"].call
           chef_cap.cap_task["chef:setup"].call
