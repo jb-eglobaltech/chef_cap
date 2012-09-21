@@ -30,15 +30,15 @@ class ChefCapHelper
       when "Hash_Hash"
         hash[key].merge!(value) do |k, oldvalue, newvalue|
           case "#{oldvalue.class}_#{newvalue.class}"
-            when "Hash_Hash"
-              if oldvalue.has_key?(oldvalue) && newvalue.has_key?(newvalue)
-                recursive_merge(oldvalue, k, newvalue)
-              else
-                oldvalue.merge(newvalue)
-              end
+          when "Hash_Hash"
+            if oldvalue.has_key?(oldvalue) && newvalue.has_key?(newvalue)
+              recursive_merge(oldvalue, k, newvalue)
             else
-              newvalue
+              oldvalue.merge(newvalue)
             end
+          else
+            newvalue
+          end
         end
       else
         hash[key] = value
@@ -94,8 +94,7 @@ class ChefCapHelper
       return nil if json_hash["run_list"].nil?
       new_run_list = json_hash["run_list"].dup
       if json_hash.has_key? "deploy_recipe"
-        deploy_recipe = new_run_list.delete(json_hash["deploy_recipe"])
-        new_run_list << deploy_recipe if deploy_recipe && !should_not_deploy
+        new_run_list.delete(json_hash["deploy_recipe"]) if should_not_deploy
       end
       new_run_list
     end

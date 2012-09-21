@@ -169,15 +169,6 @@ describe ChefCapHelper do
   end
 
   describe ".rewrite_run_list_for_deploy" do
-    it "should move the deploy recipe to the end of the run list if it is specified" do
-      json_with_run_list = {
-        "run_list" => ["something", "something", "deployrecipe", "darkside"],
-        "deploy_recipe" => "deployrecipe"
-      }
-
-      ChefCapHelper.rewrite_run_list_for_deploy(json_with_run_list).should == ["something", "something", "darkside", "deployrecipe"]
-    end
-
     it "should do nothing if the run list does not contain the deploy recipe" do
       json_with_run_list = {
         "run_list" => ["something", "something", "darkside"],

@@ -902,25 +902,6 @@ describe "chef_cap" do
         JS
         chef_cap.stub(:system).and_return(true)
       end
-
-      it "puts the specified deploy_recipe at the very end of the run list" do
-        chef_cap.stub!(:put => "stubbed")
-        chef_cap.stub!(:upload => "stubbed")
-        chef_cap.stub!(:sudo => "stubbed")
-
-        chef_cap.cap_task[:some_env].call
-
-        chef_cap.parallel_mocks << proc { |server_session|
-          server_session.stub!(:put => "stubbed")
-          server_session.stub!(:sudo => "stubbed")
-        }
-
-        chef_cap.cap_task["chef:deploy"].call
-
-        chef_cap.parallel_sessions.each do |server_session|
-          server_session.things_that_were_set["node_hash_for_localhost"]["run_list"].should == ["role1", "roleshared", "something", "darkside", "my_deploy_recipe"]
-        end
-      end
     end
 
     describe "node[:environment]" do
